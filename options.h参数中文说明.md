@@ -1,0 +1,23 @@
+# Class Options
+ - `LogStorage * poLogStorage`开发者可自行实现用于存储Paxos数据的模块，这个存储模块通过这个指针进行设置。
+ - `std::string sLogStoragePath`我们同时提供了默认的存储，无需开发者自行实现，仅需要传递一个存储目录路径即可。
+ - `bool bSync`控制我们默认存储每次写盘是否附加fdatasync，如果设置为`false`，那么在机器重启的情况下有可能会导致磁盘丢失数据，从而影响PhxPaxos的数据一致性，默认为`true`。当然机器重启并非意味着100%的磁盘数据丢失，并且在磁盘数据丢失的情况下，也不是100%会导致数据不一致，愿意冒这个风险的开发者，设置为`false`将获得更高的性能。
+ - `int iSyncInterval`一个权衡，设置每个多少次写入附加一次fdatasync，降低机器重启丢失的数据量，从而大幅降低数据出现不一致的几率。
+ - `NetWork * poNetWork`开发者可自行实现PhxPaxos网络通信的模块。
+ - `size_t iUDPMaxSize`默认网络模块对于小于`iUDPMaxSize`的网络包会采用UDP协议进行发送和接收，否则采用TCP，根据网络质量情况调整这个值。
+ - `int iIOThreadCount`控制TCP网络传输模块使用的线程并发数，一般千兆网卡使用默认值1即可，但为了适应现在的万兆网卡，所以提供这个选项供调整。
+ - `int iGroupCount`PhxPaxos可以开启多个互相独立的Group，他们仅仅共享同一个存储和网络模块，使得代码变得简洁。不同的Group之间毫无联系，他们各自都是完整的Paxos协议体系，互不干扰。
+ - `NodeInfo oMyNode`当前运行节点的IP/PORT参数。
+ - `NodeInfoList vecNodeInfoList`Paxos由多个节点构成，这个列表设置这些节点的IP/PORT信息。当开启了PhxPaxos的成员管理功能后，这个信息仅仅会被接受一次作为集群的初始化，后面将会无视这个参数的存在。
+ - `bool bUseMembership`选择是否由PhxPaxos进行集群节点的成员管理，包括接管节点成员的IP/PORT信息，进行添加/删除/替换节点操作。只有使用此功能，在进行成员变更的同时仍然能保证数据一致性。默认开启**不开启**此功能。
+ - `MembershipChangeCallback pMembershipChangeCallback`开发者可以设置一个函数指针，PhxPaxos在发现成员有变化的时候会回调这个函数，以便开发者可以在这个时刻做些什么事情。
+ - `MasterChangeCallback pMasterChangeCallback`PhxPaxos发现Master发生切换的时候会回调这个函数。
+ - `GroupSMInfoList vecGroupSMInfoList`一个二维列表，分别对应各个Group的状态机列表。
+ - `Breakpoint * poBreakpoint`PhxPaxos会在程序运行的一些关键位置调用这些断点函数，开发者可以自行实现这些函数，比如可以用来监控或统计上报。
+ - `bool bIsLargeValueMode`PhxPaxos默认对单次写入数据较小的请求(<2M)适配更为出色，如你的程序非常频繁的进行超大数据的写入(>10M)，可以设置这个值为`true`。
+ - `FollowerNodeInfoList vecFollowerNodeInfoList`PhxPaxos支持跟随者模式，这个列表可以进行`X1 follow X2`的设置。跟随者节点不参与Paxos投票，仅学习所有的Chosen value。
+ - `LogFunc pLogFunc`PhxPaxos有非常丰富的日志助于开发者定位问题，开发者可以实现自己的打日志函数。
+ - `LogLevel eLogLevel`默认的日志仅仅会进行屏幕的标准输出，如使用我们默认的模块，可通过这个来控制日志的级别。
+ - `bool bUseCheckpointReplayer`我们提供一种镜像状态机的机制帮助开发者进行状态机数据的Checkpoint生成，这个参数控制是否启用这种模式，当然这个要搭配`sm.h`里面的一些函数来使用。
+ - `bUseBatchPropose`设置是否启动批量Propose接口。
+ - `bool bOpenChangeValueBeforePropose`设置是否使用BeforePropose功能，这个功能具体解释可参考include下sm.h的接口说明。
